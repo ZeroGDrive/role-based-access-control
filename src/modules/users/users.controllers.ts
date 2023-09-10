@@ -1,8 +1,13 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import jwt from 'jsonwebtoken';
 import { SYSTEM_ROLES } from '../../config/permissions';
+import { logger } from '../../utils/logger';
 import { getRoleByName } from '../roles/roles.services';
-import { CreateUserBody, LoginBody } from './users.schemas';
+import {
+  AssignRoleToUserBody,
+  CreateUserBody,
+  LoginBody,
+} from './users.schemas';
 import {
   assignRoleToUser,
   createUser,
@@ -87,4 +92,29 @@ export async function loginHandler(
   ); // change this secret or signing method
 
   return { token };
+}
+
+export async function assignRoleToUserHandler(
+  request: FastifyRequest<{
+    Body: AssignRoleToUserBody;
+  }>,
+  reply: FastifyReply
+) {
+  const { userId, roleId } = request.body;
+  const applicationId = request.user.applicationId;
+
+  try {
+    const result = await assignRoleToUser({
+      userId,
+      roleId,
+      applicationId,
+    });
+
+    return result;
+  } catch (e) {
+    logger.error('Error assigning role to user', e);
+    return reply.code(400).send({
+      message: 'Error assigning role to user',
+    });
+  }
 }
